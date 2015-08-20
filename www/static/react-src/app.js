@@ -23,6 +23,10 @@ var App = React.createClass({
         staticFilters['platforms'] = [];
         staticFilters['authors'] = [];
         staticFilters['licenses'] = [];
+        var platforms = App.getURLParameter('platforms');
+        if(platforms) {
+            staticFilters['platforms'] = staticFilters['platforms'].concat(platforms.split(','));
+        }
         var q = App.getURLParameter('q');
         if (q) {
             return {
@@ -44,10 +48,9 @@ var App = React.createClass({
     },
     handleUserInput: function(filterText) {
         /* Routing logic */
-        var filterTextLowerCase = filterText.toLowerCase();
+        var platformFilters = this.state.staticFilters["platforms"];
         delay(function(){
-            window.history.pushState({"filterText":filterTextLowerCase}, "", "?q=" + filterTextLowerCase);
-            ga('send', 'pageview', '/index.html?q=' + filterTextLowerCase);
+            App.updateURL(filterText, platformFilters);
         }, 2000 );
 
         this.setState({
@@ -64,6 +67,10 @@ var App = React.createClass({
             else {
                 previousState.staticFilters[keyword].push(condition);
             }
+
+            delay(function(){
+                App.updateURL(previousState.filterText, previousState.staticFilters['platforms']);
+            }, 2000 );
 
             return {
                 staticFilters: previousState.staticFilters,
@@ -232,7 +239,32 @@ var App = React.createClass({
                     break;
             }
             return plugins;
-        }
+        },
+        updateURL: function(filterText, platformFilters) {
+            var query = "";
+            var stateObj = {};
+            if(filterText) {
+                var filterTextLowerCase = filterText;
+                query = "?q=" + filterTextLowerCase;
+                stateObj.filterText = filterTextLowerCase;
+            }
+
+            if(platformFilters.length > 0) {
+                if(!query) {
+                    query = "?platforms=";
+                } else {
+                    query = query + "&platforms=";
+                }
+                platformFilters.forEach(function(platform) {
+                    query = query + platform + ",";
+                });
+                query = query.slice(0, query.length - 1);
+                stateObj.platforms = platformFilters;
+            }
+
+            window.history.pushState(stateObj, "", query);
+            ga('send', 'pageview', '/index.html' + query);
+        },
     },
     componentDidMount: function() {
         var plugins = [],
@@ -330,7 +362,7 @@ var App = React.createClass({
                     this.setState({
                         plugins: plugins,
                         placeHolderText: 'Search ' + pluginCount + ' plugins...',
-                        searchResults: plugins
+                        searchResults: App.filterPlugins(plugins, '', this.state.staticFilters)
                     });
                 }
                 getDownloadCount(plugins,this);
