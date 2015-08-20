@@ -18,20 +18,26 @@ window.addEventListener('popstate', function(e) {
 
 var App = React.createClass({
     getInitialState: function() {
+        var staticFilters = [];
+        staticFilters['platforms'] = [];
+        staticFilters['authors'] = [];
+        staticFilters['licenses'] = [];
         var q = App.getURLParameter('q');
         if (q) {
             return {
                 plugins: [],
                 filterText: q,
                 placeHolderText: 'Loading...',
-                searchResults: []
-            }
+                searchResults: [],
+                staticFilters: staticFilters
+            };
         } else {
             return {
                 plugins: [],
                 filterText: '',
                 placeHolderText: 'Loading...',
-                searchResults: []
+                searchResults: [],
+                staticFilters: staticFilters
             };
         }
     },
@@ -45,23 +51,24 @@ var App = React.createClass({
 
         this.setState({
             filterText: filterText,
-            searchResults: App.filterPlugins(this.state.plugins, filterText)
+            searchResults: App.filterPlugins(this.state.plugins, filterText, this.state.staticFilters)
         });
     },
-    addCondition: function(condition) {
+    toggleCondition: function(keyword, condition) {
         this.setState(function(previousState, currentProps) {
-            if(previousState.filterText.indexOf(condition) > -1) {
-                return {
-                    filterText: previousState.filterText,
-                    plugins: previousState.plugins
-                };
+            var conditionIndex = previousState.staticFilters[keyword].indexOf(condition);
+            if(conditionIndex > -1) {
+                previousState.staticFilters[keyword].splice(conditionIndex, 1);
             }
             else {
-                return {
-                    filterText: previousState.filterText.trim() + ' ' + condition + ' ',
-                    plugins: previousState.plugins
-                };
+                previousState.staticFilters[keyword].push(condition);
             }
+
+            return {
+                staticFilters: previousState.staticFilters,
+                plugins: previousState.plugins,
+                searchResults: App.filterPlugins(previousState.plugins, this.state.filterText, this.state.staticFilters)
+            };
         });
     },
     loadFilterText : function(filterText) {
@@ -89,7 +96,7 @@ var App = React.createClass({
         tagOfficialPlugins: function() {
 
         },
-        filterPlugins: function(plugins, filter) {
+        filterPlugins: function(plugins, filter, staticFilters) {
             var contains = function(values, pluginInfo) {
                 var allValuesPresent = true;
                 if(values.length == 0) {
@@ -151,12 +158,24 @@ var App = React.createClass({
             }
             var results = [];
             var filters = populateFilters(filter);
+
+            var combine = function(filter1, filter2) {
+                var result = [].concat(filter1)
+                for(var i = 0; i < filter2.length; i++) {
+                    if(result.indexOf(filter2[i]) === -1) {
+                        result.push(filter2[i])
+                    }
+                }
+                return result;
+            }
+
             for (var i = 0; i < plugins.length; i++) {
                 var plugin = plugins[i];
                 var fullPluginText = plugin.name.concat(plugin.author, plugin.keywords, plugin.license, plugin.description);
-                if(contains(filters['platforms'], plugin.keywords)
-                    && contains(filters['authors'], plugin.author)
-                    && contains(filters['licenses'], plugin.license)
+
+                if(contains(combine(filters['platforms'], staticFilters['platforms']), plugin.keywords)
+                    && contains(combine(filters['authors'], staticFilters['authors']), plugin.author)
+                    && contains(combine(filters['licenses'], staticFilters['licenses']), plugin.license)
                     && contains(filters['searchWords'], fullPluginText)) {
                         results.push(plugin);
                 }
@@ -211,7 +230,7 @@ var App = React.createClass({
 
                         that.setState({
                             plugins: plugins,
-                            searchResults: App.filterPlugins(plugins, this.state.filterText)
+                            searchResults: App.filterPlugins(plugins, this.state.filterText, this.state.staticFilters)
                         });
                     }.bind(self), function() { console.log('xhr err'); });
                     packageNames = "";
@@ -258,7 +277,7 @@ var App = React.createClass({
                         plugins: plugins,
                         filterText: q,
                         placeHolderText: 'Search ' + pluginCount + ' plugins...',
-                        searchResults: App.filterPlugins(plugins, q)
+                        searchResults: App.filterPlugins(plugins, q, this.state.staticFilters)
                     });
                 }
                 else {
