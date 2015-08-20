@@ -1,7 +1,8 @@
 var React           = window.React = require('react'), // assign it to window for react chrome extension
     SearchBar       = require('./searchbar.jsx'),
     PluginList      = require('./pluginlist.jsx'),
-    App             = {};
+    App             = {},
+    SortDropdown = require('./sortdropdown.jsx');
 
 var timer = null;
 var Constants = {
@@ -69,6 +70,15 @@ var App = React.createClass({
                 plugins: previousState.plugins,
                 searchResults: App.filterPlugins(previousState.plugins, this.state.filterText, this.state.staticFilters)
             };
+        });
+    },
+    setSort: function(sort) {
+        this.setState(function(previousState, currentProps) {
+            App.sortPlugins(previousState.plugins, sort)
+            return {
+                plugins: previousState.plugins,
+                searchResults: App.filterPlugins(previousState.plugins, this.state.filterText, this.state.staticFilters)
+            }
         });
     },
     loadFilterText : function(filterText) {
@@ -181,6 +191,47 @@ var App = React.createClass({
                 }
             };
             return results;
+        },
+        sortPlugins: function(plugins, criteria) {
+            // Search results should be deterministic, so we need a secondary
+            // sort function for cases where the plugins are equal
+            var compareName = function(p1, p2) {
+                if(p1.name === p2.name) {
+                    return 0;
+                } else if(p1.name > p2.name) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            }
+            switch(criteria) {
+                case 'Downloads':
+                    plugins.sort(function(p1, p2) {
+                        if(p2.downloadCount === p1.downloadCount) {
+                            return compareName(p1, p2);
+                        };
+                        return p2.downloadCount - p1.downloadCount;
+                    });
+                    break;
+                case 'Recently Updated':
+                    plugins.sort(function(p1, p2) {
+                        if(p2.modified === p1.modified) {
+                            return compareName(p1, p2);
+                        };
+                        return p1.modified - p2.modified;
+                    });
+                    break;
+                case 'Quality':
+                default:
+                    plugins.sort(function(p1, p2) {
+                        if(p2.rating === p1.rating) {
+                            return compareName(p1, p2);
+                        };
+                        return p2.rating - p1.rating;
+                    });
+                    break;
+            }
+            return plugins;
         }
     },
     componentDidMount: function() {
@@ -190,17 +241,17 @@ var App = React.createClass({
             pluginCount = 0,
             self = this,
             queryHost = "http://npmsearch.com/query",
-            queryFields = "fields=name,keywords,license,description,author,modified,homepage,version",
+            queryFields = "fields=name,keywords,license,description,author,modified,homepage,version,rating",
             queryKeywords = "q=keywords:%22ecosystem:cordova%22",
             queryInitialSize = Constants.NpmSearchInitialSize;
 
-        xhrRequest(queryHost + "?" + queryFields + "&" + queryKeywords + "&size=" + queryInitialSize + "&start=0&sort=rating:desc", function(xhrResult) {
+        xhrRequest(queryHost + "?" + queryFields + "&" + queryKeywords + "&size=" + queryInitialSize + "&start=0", function(xhrResult) {
             plugins = xhrResult.results;
             pluginCount = xhrResult.total;
             if (pluginCount <= queryInitialSize) {
                 processPlugins.bind(self, officialPlugins, plugins)();
             } else {
-                xhrRequest(queryHost + "?" + queryFields + "&" + queryKeywords + "&size=" + (pluginCount - queryInitialSize) + "&start=" + queryInitialSize + "&sort=rating:desc", function(xhrResult) {
+                xhrRequest(queryHost + "?" + queryFields + "&" + queryKeywords + "&size=" + (pluginCount - queryInitialSize) + "&start=" + queryInitialSize, function(xhrResult) {
                         plugins = [].concat(plugins, xhrResult.results);
                         processPlugins.bind(self, officialPlugins, plugins)();
                 }, function() { console.log('xhr err'); });
@@ -218,14 +269,6 @@ var App = React.createClass({
                                 plugins[j] = App.shallowCopy(plugins[j]);
                                 plugins[j].downloadCount = xhrResult[plugins[j].name].downloads;
                             }
-                        }
-
-                        // If we were unable to do server side sorting because
-                        // we requested in multiple batches, do it in the client
-                        if(plugins.length > Constants.NpmSearchInitialSize) {
-                            plugins.sort(function(p1, p2) {
-                                return p2.downloadCount - p1.downloadCount;
-                            });
                         }
 
                         that.setState({
@@ -270,6 +313,9 @@ var App = React.createClass({
                 plugins[i].modified = Math.ceil((dateNow - new Date(plugins[i].modified)) / oneDay);
             };
 
+            // Initial sort is always on quality
+            plugins = App.sortPlugins(plugins, 'Quality');
+
             if (this.isMounted()) {
                 var q = App.getURLParameter('q');
                 if(q) {
@@ -298,6 +344,7 @@ var App = React.createClass({
                     <div id="topcontent">
                         <div id="pluggy"></div>
                         <div id="discovermessage"><h1>Search Cordova Plugins</h1></div>
+                        <SortDropdown />
                     </div>
                     <SearchBar
                         initialValue={this.state.filterText}
