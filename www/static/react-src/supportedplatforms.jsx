@@ -12,6 +12,11 @@ var SupportedPlatforms = React.createClass({
             moreClicked: true
         });
     },
+    componentWillReceiveProps: function(nextProps) {
+        this.setState({
+            moreClicked: false
+        });
+    },
     render: function() {
         var keywords = this.props.keywords;
         var sortedMajorPlatforms = [
