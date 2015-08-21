@@ -1,6 +1,7 @@
 var React           = window.React = require('react'), // assign it to window for react chrome extension
     SearchBar       = require('./searchbar.jsx'),
     PluginList      = require('./pluginlist.jsx'),
+    PlatformButton  = require('./platformbutton.jsx')
     App             = {},
     SortDropdown = require('./sortdropdown.jsx');
 
@@ -370,6 +371,12 @@ var App = React.createClass({
         }
     },
     render: function() {
+        var createPlatformButton = function(platform, keyword, state) {
+            var active = state.staticFilters["platforms"].indexOf(keyword) > -1;
+            return (
+                <PlatformButton platform={platform} keyword={keyword} initiallyActive={active}/>
+            );
+        }
         return (
             <div>
                 <div className="container">
@@ -397,14 +404,15 @@ var App = React.createClass({
                     <div className="row filter-by-platforms">
                         <div className="filter-by-platform-label"><span>Platform:</span></div>
                         <ul className="nav nav-pills filter-by-platform-filters">
-                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>Android</a></li>
-                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>iOS</a></li>
-                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>Windows 10</a></li>
-                            <li role="presentation"><a href="#">Blackberry</a></li>
-                            <li role="presentation"><a href="#">Ubuntu</a></li>
-                            <li role="presentation"><a href="#">Firefox OS</a></li>
-                            <li role="presentation"><a href="#">WebOS</a></li>
-                            <li role="presentation"><a href="#">Fire OS</a></li>
+                            {createPlatformButton("Android", "cordova-android", this.state)}
+                            {createPlatformButton("iOS", "cordova-ios", this.state)}
+                            {createPlatformButton("Windows 10", "cordova-windows", this.state)}
+                            {createPlatformButton("Blackberry", "cordova-blackberry10", this.state)}
+                            {createPlatformButton("Ubuntu", "cordova-ubuntu", this.state)}
+                            {createPlatformButton("Firefox OS", "cordova-firefoxos", this.state)}
+                            {createPlatformButton("WebOS", "cordova-webos", this.state)}
+                            {createPlatformButton("Fire OS", "cordova-amazon-fireos", this.state)}
+                            {createPlatformButton("Browser", "cordova-browser", this.state)}
                         </ul>
                     </div>
                 </div>
