@@ -372,17 +372,41 @@ var App = React.createClass({
     render: function() {
         return (
             <div>
-                <div id="headblock">
-                    <div id="topcontent">
-                        <div id="pluggy"></div>
-                        <div id="discovermessage"><h1>Search Cordova Plugins</h1></div>
-                        <SortDropdown />
+                <div className="container">
+                    <div className="row">
+                        <div className="col-sm-12 text-center">
+                            <h1>Cordova Plugins</h1>
+                        </div>
                     </div>
-                    <SearchBar
-                        initialValue={this.state.filterText}
-                        placeHolderText={this.state.placeHolderText}
-                        onUserInput={this.handleUserInput}
-                    />
+                    <div className="row">
+                        <div className="col-sm-12">
+                        <SearchBar
+                            initialValue={this.state.filterText}
+                            placeHolderText={this.state.placeHolderText}
+                            onUserInput={this.handleUserInput}
+                        />
+                            <div className="plugins_links">
+                                    <ul className="nav nav-justified">
+                                    <li><a href="#"><span className="glyphicon glyphicon-plus"></span><i>&nbsp;</i>Contribute Plugins</a></li>
+                                    <li><a href="#"><span className="glyphicon glyphicon-question-sign"></span><i>&nbsp;</i>Plugin Help</a></li>
+                                    <li><a href="#"><span className="glyphicon glyphicon-alert"></span><i>&nbsp;</i>Plugin Issue Tracker</a></li>
+                                    </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="row filter-by-platforms">
+                        <div className="filter-by-platform-label"><span>Platform:</span></div>
+                        <ul className="nav nav-pills filter-by-platform-filters">
+                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>Android</a></li>
+                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>iOS</a></li>
+                            <li role="presentation" className="active"><a href="#"><span className="glyphicon glyphicon-ok"></span><i>&nbsp;</i>Windows 10</a></li>
+                            <li role="presentation"><a href="#">Blackberry</a></li>
+                            <li role="presentation"><a href="#">Ubuntu</a></li>
+                            <li role="presentation"><a href="#">Firefox OS</a></li>
+                            <li role="presentation"><a href="#">WebOS</a></li>
+                            <li role="presentation"><a href="#">Fire OS</a></li>
+                        </ul>
+                    </div>
                 </div>
                 <PluginList plugins={this.state.searchResults} />
             </div>
