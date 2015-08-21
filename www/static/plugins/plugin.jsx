@@ -6,6 +6,19 @@ var Plugin = React.createClass({
     shouldComponentUpdate: function(nextProps, nextState) {
         return this.props.plugin !== nextProps.plugin;
     },
+    copyText: function() {
+        var range = document.createRange();
+        range.selectNode(document.getElementById("command-" + this.props.plugin.name));
+
+        var select = window.getSelection();
+        select.addRange(range);
+        try {
+            document.execCommand("copy");
+        } catch(error) {
+
+        }
+        select.removeAllRanges();
+    },
     render: function() {
         if(!this.props.plugin) {
             // Empty card with loading wheel
@@ -33,6 +46,7 @@ var Plugin = React.createClass({
             license = license[0];
         }
         var downloadField;
+        var copyIcon;
         var npmLink = 'https://www.npmjs.com/package/' + this.props.plugin.name;
 
         var classes = classNames({
@@ -45,9 +59,13 @@ var Plugin = React.createClass({
             downloadField = <p><small> {downloadCount} downloads last month</small></p>;
         }
 
+        if(document.queryCommandSupported("copy")) {
+            copyIcon = (<img src="/static/img/copy-clipboard-icon.svg" className="plugins-copy-to-clipboard" onClick={this.copyText}/>)
+        }
+
         return (
             <div className="container plugin-results-result">
-                <img src="/static/img/copy-clipboard-icon.svg" className="plugins-copy-to-clipboard"/>
+                {copyIcon}
                 <div className="row">
                     <div className="col-sm-9">
                         <h2><a href={npmLink} onClick={trackOutboundLink.bind(this, npmLink)} target="_blank">{this.props.plugin.name}</a></h2>
@@ -64,6 +82,7 @@ var Plugin = React.createClass({
                         <p className="downloads"><strong>{downloadCount}</strong> downloads last month</p>
                         <p className="last-updated">Last updated <strong>{this.props.plugin.modified} days ago</strong></p>
                     </div>
+                    <div className="plugin-npm-command" id={"command-" + this.props.plugin.name}>{"npm install " + this.props.plugin.name}</div>
                 </div>
             </div>
         )
